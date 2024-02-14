@@ -6,15 +6,14 @@ const yaml = require('js-yaml');
 const fetch = require('node-fetch');
 const { Octokit } = require('@octokit/rest');
 const readline = require('readline');
+const okm = require('./octokit.js');
 
 // récupérer les arguments
 const args = process.argv.slice(2);
 const filename = (args[0] != null) ? args[0] : 'project';
 
 const configPath = path.join(__dirname, `../data/${filename}.yml`);
-const currentConfig = yaml.load(fs.readFileSync(configPath, 'utf8'));
-console.log(currentConfig[0]);
-
+const currentData = yaml.load(fs.readFileSync(configPath, 'utf8'));
 
 const octokit = new Octokit({
   auth: process.env.GITHUB_TOKEN,
@@ -26,34 +25,6 @@ const octokit = new Octokit({
 let owner = process.env.DEFAULT_GITHUB_USER;
 let repo = process.env.DEFAULT_GITHUB_REPO;
 let destination = 'issues';
-
-// create milestone and issue with octokit
-/*octokit.rest.issues.createMilestone({
-    owner: 'tnntwister',
-    repo: 'issues-import',
-    title: 'Milestone title',
-    state: 'open',
-    description: 'Milestone description',
-}).then(({ data }) => {
-    console.log(data.id);
-}).catch((err) => {
-    console.error(err);
-});*/
-/*
-octokit.rest.issues.create({
-    owner: 'tnntwister',
-    repo: 'issues-import',
-    title: 'Issue title',
-    body: 'Issue description',
-    labels: ['documentation'],
-    milestone: 1,
-}).then(({ data }) => {
-    console.log(data.title);
-}).catch((err) => {
-    console.error(err);
-});
-*/
-
 
 const rl = readline.createInterface({
   input: process.stdin,
@@ -84,6 +55,16 @@ rl.question(`Quel utilisateur Github est concerné (${owner}) ? `, (answer) => {
                 destination = 'issues';
             }
             console.log(`Nous allons importer des données dans : ${destination}`);
+            
+            let currentConfig = {
+                owner: owner,
+                repo: repo,
+                destination: destination
+            };
+
+            if (destination === 'issues') {
+                okm.createIssues(octokit, currentConfig, currentData);
+            }
             rl.close();
         });
     });
